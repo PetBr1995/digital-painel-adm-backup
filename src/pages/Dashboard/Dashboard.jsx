@@ -110,14 +110,20 @@ const Dashboard = () => {
       }
     }).then((response) => {
       const todosUsuarios = response.data;
+  
       const ativos = todosUsuarios.filter(user =>
+        user.stripeCustomerId && // Verifica se o stripeCustomerId existe e não é nulo
         user.assinaturas?.some(assinatura => assinatura.status === "ATIVA")
       );
-
+  
       setUsuarios(todosUsuarios);
       setUsuariosAtivos(ativos.length);
-      
-      const receitaEstimada = ativos.length * 49.90;
+  
+      const receitaEstimada = ativos.reduce((total, user) => {
+        const assinaturaAtiva = user.assinaturas?.find(a => a.status === "ATIVA");
+        return total + (assinaturaAtiva?.valorPago ?? 0);
+      }, 0);
+  
       setMetricas(prev => ({
         ...prev,
         receitaMensal: receitaEstimada,
@@ -127,7 +133,7 @@ const Dashboard = () => {
       console.log("Erro ao buscar usuários:", error);
     });
   };
-
+  
   const getCategorias = () => {
     return axios.get('https://api.digitaleduca.com.vc/categoria/list')
       .then((response) => {
